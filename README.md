@@ -75,12 +75,12 @@ pip install -r requirements.txt
 cp .env.example .env
 
 # Inicie o servidor
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --port 8001 
 ```
 
-O backend estará disponível em `http://localhost:8000`.
+O backend estará disponível em `http://localhost:8001`.
 
-Documentação interativa da API: `http://localhost:8000/docs`
+Documentação interativa da API: `http://localhost:8001/docs`
 
 ### 4. Configure e inicie o frontend
 

@@ -27,19 +27,28 @@
 
 ---
 
-## Dia 2 — Inteligência estilométrica
+## Dia 2 — Inteligência estilométrica ✅
 
 **Objetivo:** o sistema começa a "entender" como o aluno escreve.
 
 **Backend**
-- Pipeline de extração das 20 features por texto
-- Cálculo de baseline (média + desvio padrão por feature)
-- Calibração com prior da turma (para baselines pequenas)
-- Algoritmo de análise de tendência (regressão linear por feature)
-- Análise intra-documento (parágrafos vs. parágrafos)
-- Armazenamento do perfil do aluno no banco
+- ✅ Pipeline de extração das 20 features por texto (`services/features.py`)
+- ✅ Cálculo de baseline — média, desvio padrão e tendência por feature (`services/perfil.py`)
+- ✅ Calibração com fallback mínimo para evitar falsos positivos com baseline pequena
+- ✅ Algoritmo de análise de tendência — regressão linear com decaimento por recência
+- ✅ Análise intra-documento — parágrafos comparados entre si, destaque com ≥ 2 features destoantes
+- ✅ Router `POST /analise/{id}` e `GET /analise/{id}` — extração + desvios + intra-doc + dossiê
+- ✅ Auto-extração de features no upload; recálculo de perfil ao marcar/desmarcar baseline
+- ✅ Status do aluno (ok/atenção/conversar) calculado dinamicamente a partir dos dossiês
 
-**Entregável:** ao subir um trabalho, o sistema gera flags de desvio com magnitude.
+**Frontend**
+- ✅ Botão "Analisar trabalho" (`AnalisarButton` client component)
+- ✅ Contadores reais de normais/atenção/conversar/fontes
+- ✅ Lista de evidências estilométricas com z-score e código de cor
+- ✅ Painel de parágrafos que destoam do próprio texto
+- ✅ Parágrafos destacados com borda âmbar no texto completo
+
+**Entregável:** ao subir um trabalho e clicar em "Analisar", o sistema exibe desvios com magnitude e destaca parágrafos suspeitos. ✅
 
 ---
 

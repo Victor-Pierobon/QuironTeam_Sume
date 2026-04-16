@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
-from app.models.trabalho import Trabalho
+from app.models.trabalho import Trabalho, TrabalhoFeature
 from app.schemas.trabalho import TrabalhoOut, TrabalhoDetalhe
 from app.services.parser import extrair_texto
+from app.services.features import extrair_features
+from app.services.perfil import recalcular_perfil
 
 router = APIRouter()
 
@@ -50,8 +52,20 @@ async def upload_trabalho(
         baseline=baseline,
     )
     db.add(trabalho)
+    await db.flush()  # get trabalho.id
+
+    # Auto-extract features on upload
+    features = extrair_features(texto)
+    for nome, valor in features.items():
+        db.add(TrabalhoFeature(trabalho_id=trabalho.id, nome=nome, valor=valor))
+
     await db.commit()
     await db.refresh(trabalho)
+
+    # If marked as baseline, recalculate student profile
+    if baseline:
+        await recalcular_perfil(aluno_id, db)
+
     return trabalho
 
 
@@ -63,5 +77,6 @@ async def marcar_baseline(trabalho_id: int, baseline: bool, db: AsyncSession = D
         raise HTTPException(status_code=404, detail="Trabalho não encontrado")
     trabalho.baseline = baseline
     await db.commit()
+    await recalcular_perfil(trabalho.aluno_id, db)
     await db.refresh(trabalho)
     return trabalho
