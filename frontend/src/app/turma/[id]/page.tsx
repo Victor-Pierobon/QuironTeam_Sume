@@ -1,0 +1,102 @@
+import Link from "next/link";
+import { api, Aluno } from "@/lib/api";
+
+const STATUS_CONFIG = {
+  ok: { label: "Normal", color: "bg-[#4a7c59] text-white" },
+  atencao: { label: "Atenção", color: "bg-[#c8860a] text-white" },
+  destaque: { label: "Conversar", color: "bg-[#8b3a2a] text-white" },
+};
+
+export default async function TurmaPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const turmaId = Number(id);
+
+  let turma;
+  let alunos: Aluno[] = [];
+
+  try {
+    [turma, alunos] = await Promise.all([
+      api.turmas.get(turmaId),
+      api.alunos.porTurma(turmaId),
+    ]);
+  } catch {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <p className="text-[#6b5c40]">Turma não encontrada.</p>
+      </div>
+    );
+  }
+
+  const totais = {
+    ok: alunos.filter((a) => a.status === "ok").length,
+    atencao: alunos.filter((a) => a.status === "atencao").length,
+    destaque: alunos.filter((a) => a.status === "destaque").length,
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-2 text-sm text-[#6b5c40]">
+        <Link href="/dashboard" className="hover:underline">Turmas</Link>
+        {" / "}
+        <span>{turma.nome}</span>
+      </div>
+
+      <h1 className="text-3xl font-bold mb-1" style={{ fontFamily: "Georgia, serif" }}>
+        {turma.nome}
+      </h1>
+      <p className="text-[#6b5c40] text-sm mb-6">
+        {turma.disciplina} · {turma.ano_serie}
+      </p>
+
+      <div className="flex gap-4 mb-8">
+        {[
+          { label: "Total", value: alunos.length, color: "text-[#2c2416]" },
+          { label: "Normal", value: totais.ok, color: "text-[#4a7c59]" },
+          { label: "Atenção", value: totais.atencao, color: "text-[#c8860a]" },
+          { label: "Conversar", value: totais.destaque, color: "text-[#8b3a2a]" },
+        ].map((item) => (
+          <div key={item.label} className="border border-[#e8e0d0] bg-white rounded-lg px-5 py-3 text-center min-w-[80px]">
+            <div className={`text-2xl font-bold ${item.color}`}>{item.value}</div>
+            <div className="text-xs text-[#6b5c40] mt-1">{item.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {alunos.length === 0 ? (
+        <div className="border border-[#e8e0d0] rounded-lg p-8 text-center text-[#6b5c40]">
+          <p>Nenhum aluno cadastrado nesta turma.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {alunos.map((aluno) => {
+            const st = STATUS_CONFIG[aluno.status] ?? STATUS_CONFIG.ok;
+            return (
+              <Link key={aluno.id} href={`/aluno/${aluno.id}`}>
+                <div className="border border-[#e8e0d0] bg-white rounded-lg p-5 hover:border-[#4a7c59] hover:shadow-sm transition-all cursor-pointer">
+                  <div className="flex items-start justify-between mb-2">
+                    <h2 className="font-semibold" style={{ fontFamily: "Georgia, serif" }}>
+                      {aluno.nome}
+                    </h2>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${st.color}`}>
+                      {st.label}
+                    </span>
+                  </div>
+                  {aluno.matricula && (
+                    <p className="text-xs text-[#6b5c40] mb-3">Matrícula: {aluno.matricula}</p>
+                  )}
+                  <p className="text-sm text-[#6b5c40]">
+                    {aluno.total_trabalhos} {aluno.total_trabalhos === 1 ? "trabalho" : "trabalhos"}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
