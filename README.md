@@ -29,7 +29,7 @@ O Sumé não é um detector de IA. É um **copiloto pedagógico**: analisa a pro
 ## Pré-requisitos
 
 - [Node.js](https://nodejs.org/) 20+
-- [Python](https://www.python.org/) 3.11+
+- [Python](https://www.python.org/) **3.12** (obrigatório — 3.13+ ainda não tem wheels para `asyncpg` e `pydantic-core`)
 - [Docker](https://www.docker.com/) (para o banco de dados)
 
 ---
