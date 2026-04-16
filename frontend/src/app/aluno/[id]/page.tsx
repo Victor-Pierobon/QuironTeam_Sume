@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { api, Trabalho } from "@/lib/api";
+import { api, Trabalho, Trajetoria } from "@/lib/api";
+import TrajetoriaChart from "@/components/TrajetoriaChart";
 
 export default async function AlunoPage({
   params,
@@ -11,6 +12,7 @@ export default async function AlunoPage({
 
   let aluno;
   let trabalhos: Trabalho[] = [];
+  let trajetoria: Trajetoria | null = null;
 
   try {
     [aluno, trabalhos] = await Promise.all([
@@ -23,6 +25,12 @@ export default async function AlunoPage({
         <p className="text-[#6b5c40]">Aluno não encontrado.</p>
       </div>
     );
+  }
+
+  try {
+    trajetoria = await api.trajetoria.get(alunoId);
+  } catch {
+    // Sem textos suficientes ainda
   }
 
   const baselines = trabalhos.filter((t) => t.baseline);
@@ -91,6 +99,12 @@ export default async function AlunoPage({
         <div className="border border-[#e8e0d0] rounded-lg p-8 text-center text-[#6b5c40]">
           <p>Nenhum trabalho enviado ainda.</p>
         </div>
+      )}
+
+      {trajetoria && trajetoria.textos.length >= 2 && (
+        <section className="mt-8">
+          <TrajetoriaChart data={trajetoria} />
+        </section>
       )}
     </div>
   );

@@ -52,42 +52,51 @@
 
 ---
 
-## Dia 3 — Fontes e histórico de versões
+## Dia 3 — Fontes e histórico de versões ✅
 
 **Objetivo:** validar as fontes citadas e analisar como o documento foi construído.
 
 **Backend**
-- Extração de citações, URLs e DOIs do texto
-- Integração com CrossRef e OpenAlex
-- Verificação de URLs (HTTP status + domínio)
-- Classificação semafórica verde/amarelo/vermelho
-- Integração com Google Docs API (histórico de revisões)
-- Métricas de edição (saltos, proporção inserção/revisão, sessões)
+- ✅ Extração de citações, URLs e DOIs do texto (`services/fontes.py`)
+- ✅ Verificação de DOIs via CrossRef API
+- ✅ Verificação de URLs via HTTP (status code + timeout)
+- ✅ Classificação semafórica verde/amarelo/vermelho com listas curadas de domínios
+- ✅ Busca de citações inline (Autor, ano) no CrossRef
+- ✅ Router `POST /fontes/{id}` e `GET /fontes/{id}` — validação + persistência + atualização do dossiê
+- ⏭ Google Docs API (OAuth descartado conforme risco — fora do escopo do MVP de 5 dias)
 
-**Entregável:** sistema valida fontes com cor e justificativa; detecta padrões suspeitos no histórico de edição.
+**Frontend**
+- ✅ `ValidarFontesButton` — client component com loading state
+- ✅ Painel semafórico de fontes com bolinha verde/âmbar/vermelho e justificativa
+- ✅ Contador de fontes verificadas/precárias/problemáticas no cabeçalho do painel
+- ✅ Contador de fontes atualizado nos cards de resumo (normais/atenção/conversar/fontes)
 
-> **Risco:** OAuth do Google Docs pode consumir tempo. Se travar, deixar como feature avançada e priorizar `.docx` com track changes.
+**Entregável:** ao clicar em "Validar fontes", o sistema classifica cada citação com cor e justificativa. ✅
+
+> **Decisão:** OAuth do Google Docs descartado conforme risco previsto. Foco em validação de fontes que é o diferencial mais visível no demo.
 
 ---
 
-## Dia 4 — Relatórios e interface completa
+## Dia 4 — Relatórios e interface completa ✅
 
 **Objetivo:** ligar tudo numa experiência coesa end-to-end.
 
 **Backend**
-- Montagem do dossiê de evidências estruturado
-- Integração com a API da LLM
-- Geração de relatório pedagógico + roteiro socrático
-- Endpoint de registro de desfecho
+- ✅ Montagem do dossiê de evidências estruturado
+- ✅ Integração com Groq API (llama-3.3-70b-versatile)
+- ✅ Geração de relatório pedagógico + roteiro socrático (`services/relatorio.py`)
+- ✅ Endpoint `POST /relatorio/{id}` e `GET /relatorio/{id}` — geração + persistência no dossiê
+- ✅ Endpoint `POST /desfecho/{id}` e `GET /desfecho/{id}` — registro de desfecho com status e nota
+- ✅ Endpoint `GET /alunos/{id}/trajetoria` — features por texto ordenados por data + labels
 
 **Frontend**
-- Tela 1: Dashboard da turma (cartões por aluno, filtros, status)
-- Tela 2: Perfil do aluno (trajetória estilométrica + lista de trabalhos)
-- Tela 3: Análise do trabalho (parágrafos coloridos, evidências, fontes)
-- Modais: roteiro socrático, análise de parágrafo, registro de desfecho
-- Gráficos de trajetória por feature
+- ✅ `GerarRoteiroButton` — modal com observações, 3 perguntas socráticas numeradas e roteiro (Groq)
+- ✅ `DesfechoForm` — modal com radio buttons (esclarecido/conversa realizada/em acompanhamento) + nota livre
+- ✅ `TrajetoriaChart` — gráfico de linhas recharts com seletor de features e dots destacando baselines
+- ✅ Tela de perfil do aluno — trajetória estilométrica integrada abaixo da lista de trabalhos
+- ✅ Tela de análise do trabalho — botões reais (GerarRoteiro + DesfechoForm), banner de desfecho registrado
 
-**Entregável:** fluxo completo funcional — upload → análise → dossiê → roteiro socrático.
+**Entregável:** fluxo completo funcional — upload → análise → dossiê → roteiro socrático. ✅
 
 ---
 

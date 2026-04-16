@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { api, apiFetch } from "@/lib/api";
+import { api, apiFetch, Fonte, Desfecho } from "@/lib/api";
 import AnalisarButton from "@/components/AnalisarButton";
+import ValidarFontesButton from "@/components/ValidarFontesButton";
+import GerarRoteiroButton from "@/components/GerarRoteiroButton";
+import DesfechoForm from "@/components/DesfechoForm";
 
 interface Desvio {
   nome: string;
@@ -65,6 +68,20 @@ export default async function TrabalhoPage({
     // No analysis yet
   }
 
+  let fontes: Fonte[] = [];
+  try {
+    fontes = await api.fontes.get(trabalhoId);
+  } catch {
+    // No sources validated yet
+  }
+
+  let desfecho: Desfecho | null = null;
+  try {
+    desfecho = await api.desfecho.get(trabalhoId);
+  } catch {
+    // No outcome registered yet
+  }
+
   const paragrafosTexto = trabalho.texto
     ? trabalho.texto.split("\n\n").filter(Boolean)
     : [];
@@ -119,21 +136,40 @@ export default async function TrabalhoPage({
         ))}
       </div>
 
-      <div className="flex gap-3 mb-8">
+      <div className="flex flex-wrap gap-3 mb-8">
         <AnalisarButton trabalhoId={trabalhoId} />
-        <button
-          disabled
-          className="px-4 py-2 rounded-lg border border-[#e8e0d0] text-[#6b5c40] text-sm font-medium opacity-40 cursor-not-allowed"
-        >
-          Gerar roteiro de conversa
-        </button>
-        <button
-          disabled
-          className="px-4 py-2 rounded-lg border border-[#e8e0d0] text-[#6b5c40] text-sm font-medium opacity-40 cursor-not-allowed"
-        >
-          Registrar desfecho
-        </button>
+        <ValidarFontesButton trabalhoId={trabalhoId} />
+        {analise && <GerarRoteiroButton trabalhoId={trabalhoId} />}
+        <DesfechoForm
+          trabalhoId={trabalhoId}
+          desfechoAtual={desfecho ? { status: desfecho.status, nota: desfecho.nota } : null}
+        />
       </div>
+
+      {desfecho && (
+        <div className={`mb-6 border rounded-lg px-4 py-3 flex items-start gap-3 ${
+          desfecho.status === "esclarecido"
+            ? "bg-[#f0f7f2] border-[#4a7c59]"
+            : desfecho.status === "conversa_realizada"
+            ? "bg-[#fdf6e8] border-[#c8860a]"
+            : "bg-[#fdf0ee] border-[#8b3a2a]"
+        }`}>
+          <div>
+            <p className={`text-sm font-semibold ${
+              desfecho.status === "esclarecido"
+                ? "text-[#4a7c59]"
+                : desfecho.status === "conversa_realizada"
+                ? "text-[#c8860a]"
+                : "text-[#8b3a2a]"
+            }`}>
+              Desfecho: {desfecho.status === "esclarecido" ? "Esclarecido" : desfecho.status === "conversa_realizada" ? "Conversa realizada" : "Em acompanhamento"}
+            </p>
+            {desfecho.nota && (
+              <p className="text-xs text-[#2c2416] mt-1">{desfecho.nota}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Desvios estilométricos */}
@@ -195,6 +231,49 @@ export default async function TrabalhoPage({
           </div>
         )}
       </div>
+
+      {/* Painel de fontes */}
+      {fontes.length > 0 && (
+        <div className="border border-[#e8e0d0] bg-white rounded-lg p-5 mb-8">
+          <h2 className="text-sm font-semibold text-[#6b5c40] uppercase tracking-wide mb-4">
+            Fontes citadas — {fontes.filter(f => f.status === "verde").length} verificadas ·{" "}
+            {fontes.filter(f => f.status === "amarelo").length} precárias ·{" "}
+            {fontes.filter(f => f.status === "vermelho").length} problemáticas
+          </h2>
+          <div className="space-y-2">
+            {fontes.map((f) => (
+              <div
+                key={f.id}
+                className={`border rounded-md px-3 py-2 flex items-start gap-3 ${
+                  f.status === "verde"
+                    ? "bg-[#f0f7f2] border-[#4a7c59]"
+                    : f.status === "vermelho"
+                    ? "bg-[#fdf0ee] border-[#8b3a2a]"
+                    : "bg-[#fdf6e8] border-[#c8860a]"
+                }`}
+              >
+                <span
+                  className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                    f.status === "verde"
+                      ? "bg-[#4a7c59]"
+                      : f.status === "vermelho"
+                      ? "bg-[#8b3a2a]"
+                      : "bg-[#c8860a]"
+                  }`}
+                />
+                <div className="min-w-0">
+                  <p className="text-sm text-[#2c2416] font-medium truncate">
+                    {f.texto_original}
+                  </p>
+                  {f.justificativa && (
+                    <p className="text-xs text-[#6b5c40] mt-0.5">{f.justificativa}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Texto do trabalho com parágrafos destacados */}
       <div className="border border-[#e8e0d0] bg-white rounded-lg p-6">

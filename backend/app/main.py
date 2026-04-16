@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routers import turmas, alunos, trabalhos, analise
+from app.routers import turmas, alunos, trabalhos, analise, fontes, relatorio, desfecho
 
 app = FastAPI(title="Sumé API", version="0.1.0")
 
@@ -24,6 +24,9 @@ app.include_router(turmas.router, prefix="/turmas", tags=["turmas"])
 app.include_router(alunos.router, prefix="/alunos", tags=["alunos"])
 app.include_router(trabalhos.router, prefix="/trabalhos", tags=["trabalhos"])
 app.include_router(analise.router, prefix="/analise", tags=["analise"])
+app.include_router(fontes.router, prefix="/fontes", tags=["fontes"])
+app.include_router(relatorio.router, prefix="/relatorio", tags=["relatorio"])
+app.include_router(desfecho.router, prefix="/desfecho", tags=["desfecho"])
 
 
 @app.get("/")
