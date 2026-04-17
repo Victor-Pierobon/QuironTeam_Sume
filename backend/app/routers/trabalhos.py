@@ -1,12 +1,17 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
 from app.models.trabalho import Trabalho, TrabalhoFeature
+from app.models.gdocs import HistoricoVersao
 from app.schemas.trabalho import TrabalhoOut, TrabalhoDetalhe
 from app.services.parser import extrair_texto
 from app.services.features import extrair_features
 from app.services.perfil import recalcular_perfil
+from app.services.gdocs import importar_gdoc_completo, detectar_padroes
 
 router = APIRouter()
 
@@ -65,6 +70,71 @@ async def upload_trabalho(
     # If marked as baseline, recalculate student profile
     if baseline:
         await recalcular_perfil(aluno_id, db)
+
+    return trabalho
+
+
+class GDocsUploadRequest(BaseModel):
+    aluno_id: int
+    titulo: str
+    tipo: str = "redação"
+    baseline: bool = False
+    doc_url: str
+
+
+@router.post("/upload-gdocs", response_model=TrabalhoOut, status_code=201)
+async def upload_gdocs(body: GDocsUploadRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Cria um trabalho a partir de um link do Google Docs.
+    Importa texto completo + histórico de revisões em um único passo.
+    """
+    try:
+        texto, revisoes, metricas = await importar_gdoc_completo(body.doc_url)
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"Erro ao acessar o Google Docs: {e}")
+
+    if not texto.strip():
+        raise HTTPException(422, "Documento vazio ou sem texto extraível.")
+
+    trabalho = Trabalho(
+        aluno_id=body.aluno_id,
+        titulo=body.titulo,
+        tipo=body.tipo,
+        texto=texto,
+        formato_origem="gdocs",
+        baseline=body.baseline,
+    )
+    db.add(trabalho)
+    await db.flush()
+
+    # Extrai features
+    features = extrair_features(texto)
+    for nome, valor in features.items():
+        db.add(TrabalhoFeature(trabalho_id=trabalho.id, nome=nome, valor=valor))
+
+    # Salva histórico de edição automaticamente
+    padroes = detectar_padroes(metricas)
+    hist = HistoricoVersao(
+        trabalho_id=trabalho.id,
+        num_sessoes=metricas["num_sessoes"],
+        tempo_ativo_min=metricas["tempo_ativo_min"],
+        maior_insercao_pct=metricas["maior_insercao_pct"],
+        razao_edicao_adicao=metricas["razao_edicao_adicao"],
+        proporcao_final_colada=metricas["proporcao_final_colada"],
+        padroes_json=json.dumps(padroes, ensure_ascii=False),
+        revisoes_json=json.dumps(revisoes, ensure_ascii=False),
+    )
+    db.add(hist)
+
+    await db.commit()
+    await db.refresh(trabalho)
+
+    if body.baseline:
+        await recalcular_perfil(body.aluno_id, db)
 
     return trabalho
 

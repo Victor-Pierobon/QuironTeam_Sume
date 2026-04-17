@@ -6,8 +6,9 @@ import { useRef, useState } from "react";
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
 
 const TIPOS = ["redação", "relatório", "resenha", "artigo", "resumo", "outro"];
-
 const ACCEPT = ".docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf";
+
+type Aba = "arquivo" | "gdocs";
 
 interface Props {
   alunoId: number;
@@ -15,10 +16,12 @@ interface Props {
 
 export default function UploadTrabalhoButton({ alunoId }: Props) {
   const [aberto, setAberto] = useState(false);
+  const [aba, setAba] = useState<Aba>("arquivo");
   const [titulo, setTitulo] = useState("");
   const [tipo, setTipo] = useState("redação");
   const [baseline, setBaseline] = useState(false);
   const [arquivo, setArquivo] = useState<File | null>(null);
+  const [docUrl, setDocUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -29,6 +32,7 @@ export default function UploadTrabalhoButton({ alunoId }: Props) {
     setTipo("redação");
     setBaseline(false);
     setArquivo(null);
+    setDocUrl("");
     setErro(null);
     if (fileRef.current) fileRef.current.value = "";
   }
@@ -41,14 +45,13 @@ export default function UploadTrabalhoButton({ alunoId }: Props) {
   function handleArquivo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
     setArquivo(file);
-    // Preenche o título automaticamente se ainda estiver vazio
     if (file && !titulo.trim()) {
       const nome = file.name.replace(/\.(docx|pdf)$/i, "").replace(/[-_]/g, " ");
       setTitulo(nome);
     }
   }
 
-  async function handleEnviar(e: React.FormEvent) {
+  async function handleEnviarArquivo(e: React.FormEvent) {
     e.preventDefault();
     if (!arquivo) { setErro("Selecione um arquivo."); return; }
     if (!titulo.trim()) { setErro("Informe o título do trabalho."); return; }
@@ -70,14 +73,8 @@ export default function UploadTrabalhoButton({ alunoId }: Props) {
     form.append("arquivo", arquivo);
 
     try {
-      const res = await fetch(`${BASE_URL}/trabalhos/upload`, {
-        method: "POST",
-        body: form,
-      });
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg);
-      }
+      const res = await fetch(`${BASE_URL}/trabalhos/upload`, { method: "POST", body: form });
+      if (!res.ok) throw new Error(await res.text());
       handleFechar();
       router.refresh();
     } catch (e: unknown) {
@@ -87,12 +84,37 @@ export default function UploadTrabalhoButton({ alunoId }: Props) {
     }
   }
 
-  // Ícone de extensão
-  const extIcon = arquivo
-    ? arquivo.name.toLowerCase().endsWith(".pdf")
-      ? "📄 PDF"
-      : "📝 DOCX"
-    : null;
+  async function handleEnviarGDocs(e: React.FormEvent) {
+    e.preventDefault();
+    if (!docUrl.trim()) { setErro("Cole o link do Google Docs."); return; }
+    if (!titulo.trim()) { setErro("Informe o título do trabalho."); return; }
+
+    setLoading(true);
+    setErro(null);
+
+    try {
+      const res = await fetch(`${BASE_URL}/trabalhos/upload-gdocs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          aluno_id: alunoId,
+          titulo: titulo.trim(),
+          tipo,
+          baseline,
+          doc_url: docUrl.trim(),
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      handleFechar();
+      router.refresh();
+    } catch (e: unknown) {
+      setErro(e instanceof Error ? e.message : "Erro ao importar do Google Docs.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const podeSalvar = aba === "arquivo" ? !!arquivo && !!titulo.trim() : !!docUrl.trim() && !!titulo.trim();
 
   return (
     <>
@@ -105,16 +127,10 @@ export default function UploadTrabalhoButton({ alunoId }: Props) {
       </button>
 
       {aberto && (
-        <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          onClick={handleFechar}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-7"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Cabeçalho */}
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={handleFechar}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-7" onClick={(e) => e.stopPropagation()}>
+
+            <div className="flex items-center justify-between mb-5">
               <h2 className="text-2xl font-bold" style={{ fontFamily: "Georgia, serif" }}>
                 Enviar trabalho
               </h2>
@@ -126,63 +142,83 @@ export default function UploadTrabalhoButton({ alunoId }: Props) {
               </button>
             </div>
 
-            <form onSubmit={handleEnviar} className="space-y-5">
-              {/* Área de arquivo */}
-              <div>
-                <label className="font-bold text-[#78716c] uppercase tracking-wide block mb-2">
-                  Arquivo
-                </label>
-                <div
-                  className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors ${
-                    arquivo
-                      ? "border-[#2d7a4f] bg-[#edf7f1]"
-                      : "border-[#e5e1da] hover:border-[#2d7a4f] hover:bg-[#f7f4ef]"
+            {/* Abas */}
+            <div className="flex gap-1 mb-6 bg-[#f7f4ef] rounded-xl p-1">
+              {(["arquivo", "gdocs"] as Aba[]).map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => { setAba(a); setErro(null); }}
+                  className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                    aba === a
+                      ? "bg-white text-[#1c1917] shadow-sm"
+                      : "text-[#78716c] hover:text-[#1c1917]"
                   }`}
-                  onClick={() => fileRef.current?.click()}
                 >
-                  {arquivo ? (
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="text-2xl">{arquivo.name.toLowerCase().endsWith(".pdf") ? "📄" : "📝"}</span>
-                      <div className="text-left">
-                        <p className="font-semibold text-[#1c1917]">{arquivo.name}</p>
-                        <p className="text-sm text-[#78716c]">
-                          {(arquivo.size / 1024).toFixed(0)} KB · {arquivo.name.split(".").pop()?.toUpperCase()}
-                        </p>
+                  {a === "arquivo" ? "📄 Arquivo (.docx / .pdf)" : "🔗 Google Docs"}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={aba === "arquivo" ? handleEnviarArquivo : handleEnviarGDocs} className="space-y-5">
+
+              {/* Conteúdo da aba */}
+              {aba === "arquivo" ? (
+                <div>
+                  <label className="font-bold text-[#78716c] uppercase tracking-wide block mb-2">Arquivo</label>
+                  <div
+                    className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors ${
+                      arquivo ? "border-[#2d7a4f] bg-[#edf7f1]" : "border-[#e5e1da] hover:border-[#2d7a4f] hover:bg-[#f7f4ef]"
+                    }`}
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    {arquivo ? (
+                      <div className="flex items-center justify-center gap-3">
+                        <span className="text-2xl">{arquivo.name.toLowerCase().endsWith(".pdf") ? "📄" : "📝"}</span>
+                        <div className="text-left">
+                          <p className="font-semibold text-[#1c1917]">{arquivo.name}</p>
+                          <p className="text-sm text-[#78716c]">
+                            {(arquivo.size / 1024).toFixed(0)} KB · {arquivo.name.split(".").pop()?.toUpperCase()}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setArquivo(null); if (fileRef.current) fileRef.current.value = ""; }}
+                          className="ml-auto text-[#78716c] hover:text-[#dc2626] font-bold text-lg"
+                        >
+                          ✕
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setArquivo(null);
-                          if (fileRef.current) fileRef.current.value = "";
-                        }}
-                        className="ml-auto text-[#78716c] hover:text-[#dc2626] font-bold text-lg"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-4xl mb-2">📂</p>
-                      <p className="font-semibold text-[#1c1917]">Clique para selecionar</p>
-                      <p className="text-sm text-[#78716c] mt-1">Aceita .docx e .pdf</p>
-                    </div>
-                  )}
+                    ) : (
+                      <div>
+                        <p className="text-4xl mb-2">📂</p>
+                        <p className="font-semibold text-[#1c1917]">Clique para selecionar</p>
+                        <p className="text-sm text-[#78716c] mt-1">Aceita .docx e .pdf</p>
+                      </div>
+                    )}
+                  </div>
+                  <input ref={fileRef} type="file" accept={ACCEPT} onChange={handleArquivo} className="hidden" />
                 </div>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept={ACCEPT}
-                  onChange={handleArquivo}
-                  className="hidden"
-                />
-              </div>
+              ) : (
+                <div>
+                  <label className="font-bold text-[#78716c] uppercase tracking-wide block mb-2">Link do Google Docs</label>
+                  <input
+                    type="url"
+                    value={docUrl}
+                    onChange={(e) => setDocUrl(e.target.value)}
+                    placeholder="https://docs.google.com/document/d/..."
+                    className="w-full border-2 border-[#e5e1da] rounded-xl px-4 py-3 text-[#1c1917] focus:outline-none focus:border-[#2d7a4f] transition-colors"
+                  />
+                  <p className="text-sm text-[#78716c] mt-2">
+                    Compartilhe o documento com a service account da aplicação.
+                    O sistema importará o texto completo e o histórico de edições automaticamente.
+                  </p>
+                </div>
+              )}
 
               {/* Título */}
               <div>
-                <label className="font-bold text-[#78716c] uppercase tracking-wide block mb-2">
-                  Título
-                </label>
+                <label className="font-bold text-[#78716c] uppercase tracking-wide block mb-2">Título</label>
                 <input
                   type="text"
                   value={titulo}
@@ -194,9 +230,7 @@ export default function UploadTrabalhoButton({ alunoId }: Props) {
 
               {/* Tipo */}
               <div>
-                <label className="font-bold text-[#78716c] uppercase tracking-wide block mb-2">
-                  Tipo de texto
-                </label>
+                <label className="font-bold text-[#78716c] uppercase tracking-wide block mb-2">Tipo de texto</label>
                 <div className="flex flex-wrap gap-2">
                   {TIPOS.map((t) => (
                     <button
@@ -238,14 +272,15 @@ export default function UploadTrabalhoButton({ alunoId }: Props) {
                 </p>
               )}
 
-              {/* Ações */}
               <div className="flex gap-3 pt-1">
                 <button
                   type="submit"
-                  disabled={loading || !arquivo}
+                  disabled={loading || !podeSalvar}
                   className="flex-1 py-3 rounded-xl bg-[#2d7a4f] text-white font-bold hover:bg-[#25673e] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {loading ? "Enviando…" : "Enviar"}
+                  {loading
+                    ? (aba === "gdocs" ? "Importando do Google Docs…" : "Enviando…")
+                    : (aba === "gdocs" ? "Importar e analisar" : "Enviar")}
                 </button>
                 <button
                   type="button"

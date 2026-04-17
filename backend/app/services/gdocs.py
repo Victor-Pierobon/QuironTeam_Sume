@@ -166,6 +166,25 @@ def detectar_padroes(metricas: dict) -> list[dict]:
     return encontrados
 
 
+def buscar_texto_gdoc(doc_url: str) -> str:
+    """
+    Exporta o documento Google Docs como texto simples usando a mesma Service Account.
+    Retorna o conteúdo do documento como string.
+    """
+    if not _GDOCS_AVAILABLE:
+        raise RuntimeError("Pacote google-api-python-client não instalado.")
+
+    doc_id = _extrair_doc_id(doc_url)
+    service = _get_service()
+
+    # Drive API export — exporta como plain text
+    request = service.files().export_media(fileId=doc_id, mimeType="text/plain")
+    content = request.execute()
+    if isinstance(content, bytes):
+        return content.decode("utf-8", errors="replace")
+    return str(content)
+
+
 async def buscar_historico_gdocs(doc_url: str) -> tuple[list[dict], dict]:
     """
     Busca o histórico de revisões do Google Doc e retorna (revisoes, metricas).
@@ -201,3 +220,13 @@ async def buscar_historico_gdocs(doc_url: str) -> tuple[list[dict], dict]:
 
     metricas = _calcular_metricas(revisoes)
     return revisoes, metricas
+
+
+async def importar_gdoc_completo(doc_url: str) -> tuple[str, list[dict], dict]:
+    """
+    Importação completa: texto + histórico + métricas em uma chamada.
+    Retorna (texto, revisoes, metricas).
+    """
+    texto = buscar_texto_gdoc(doc_url)
+    revisoes, metricas = await buscar_historico_gdocs(doc_url)
+    return texto, revisoes, metricas

@@ -8,7 +8,7 @@ Desenvolvido para o Desafio 2 do Hackathon Brasília Virtual — Inteligência A
 
 ## O que é
 
-O Sumé não é um detector de IA. É um **copiloto pedagógico**: analisa a produção escrita do aluno sob múltiplos ângulos (padrão de escrita, confiabilidade das fontes, evolução do documento) e apresenta ao professor **evidências** — não vereditos — que ajudam a decidir se vale uma conversa com o aluno.
+O Sumé não é um detector de IA. É um **copiloto pedagógico**: analisa a produção escrita do aluno sob múltiplos ângulos (padrão de escrita, confiabilidade das fontes, histórico de edição, evolução ao longo do tempo) e apresenta ao professor **evidências** — não vereditos — que ajudam a decidir se vale uma conversa com o aluno.
 
 ---
 
@@ -16,20 +16,60 @@ O Sumé não é um detector de IA. É um **copiloto pedagógico**: analisa a pro
 
 | Camada | Tecnologia |
 |---|---|
-| Frontend | Next.js 16 + Tailwind CSS |
-| Backend | Python + FastAPI |
+| Frontend | Next.js 15 + Tailwind CSS + Recharts |
+| Backend | Python 3.12 + FastAPI |
 | Banco de dados | PostgreSQL 16 |
-| NLP | spaCy (pt_core_news_sm), nltk, textstat |
-| Parsing | python-docx, pypdf |
-| LLM | API de modelo de linguagem (relatórios pedagógicos) |
+| Análise estilométrica | 20 features (textstat + heurísticas PT-BR) |
+| Erros gramaticais | LanguageTool (API pública → Java local → heurísticas regex) |
+| Parsing de arquivos | python-docx, pypdf |
+| LLM (roteiro socrático) | Groq API |
 | Validação de fontes | CrossRef API, OpenAlex API |
+| Export PDF | fpdf2 |
+| Histórico de edição | Google Drive API v3 (Service Account) |
+
+---
+
+## Funcionalidades
+
+### Análise estilométrica
+Extrai 20 features de cada texto e compara com o perfil histórico do aluno (baseline):
+- Comprimento médio de frase, parágrafo e palavra
+- Diversidade lexical, palavras raras, palavras funcionais
+- Complexidade sintática, índice de leiturabilidade
+- Densidade de conectivos, uso de voz passiva, primeira pessoa
+- Frequência de palavras típicas de IA
+- Erros de ortografia e concordância (via LanguageTool)
+- Variação de comprimento de frase, uniformidade de parágrafos
+
+Cada feature recebe um z-score em relação ao baseline do aluno. Desvios classificados em **normal**, **atenção** e **conversar**.
+
+### Análise intra-documento
+Detecta parágrafos que destoam do próprio estilo do texto — mesmo sem baseline, identifica inserções de material externo.
+
+### Trajetória de desenvolvimento
+Gráfico de evolução com **índice normalizado 0–100** (visão geral) ou métricas individuais (modo avançado).
+
+### Validação de fontes
+Verifica referências bibliográficas via CrossRef e OpenAlex. Classifica cada fonte como verde (verificada), amarela (precária) ou vermelha (problemática).
+
+### Roteiro socrático
+Gera via LLM (Groq) um roteiro de conversa para o professor: observações sobre os dados, perguntas para o aluno e como conduzir a conversa.
+
+### Export do dossiê em PDF
+Exporta todas as evidências em PDF formatado, pronto para reunião com coordenação ou conselho de classe.
+
+### Comparação entre alunos da turma
+Detecta padrões coletivos: heatmap de z-scores, similaridade coseno entre pares e lista de alunos com estilos muito similares.
+
+### Histórico de edição via Google Docs
+Importa texto completo + histórico de revisões de um Google Doc em um único passo. Detecta padrões como colagem em bloco, ausência de revisões e tempo ativo insuficiente.
 
 ---
 
 ## Pré-requisitos
 
 - [Node.js](https://nodejs.org/) 20+
-- [Python](https://www.python.org/) **3.12** (obrigatório — 3.13+ ainda não tem wheels para `asyncpg` e `pydantic-core`)
+- [Python](https://www.python.org/) **3.12** (obrigatório — 3.13+ ainda sem wheels para `asyncpg`)
 - [Docker](https://www.docker.com/) (para o banco de dados)
 
 ---
@@ -49,135 +89,50 @@ cd QuironTeam_Sume
 docker-compose up -d
 ```
 
-Isso inicia um PostgreSQL na porta `5432` com:
-- Usuário: `sume`
-- Senha: `sume`
-- Banco: `sume`
+PostgreSQL na porta `5432` com usuário `sume`, senha `sume`, banco `sume`.
 
 ### 3. Configure e inicie o backend
 
 ```bash
 cd backend
 
-# Crie o ambiente virtual
-python -m venv .venv
+python -m venv venv
 
-# Ative (Linux/macOS)
-source .venv/bin/activate
+# Linux/macOS
+source venv/bin/activate
 
-# Ative (Windows)
-.venv\Scripts\activate
+# Windows
+venv\Scripts\activate
 
-# Instale as dependências
 pip install -r requirements.txt
 
-# Crie o arquivo de variáveis de ambiente
-cp .env.example .env
-
-# Inicie o servidor
-uvicorn app.main:app --reload --port 8001 
+uvicorn app.main:app --reload --port 8001
 ```
 
-O backend estará disponível em `http://localhost:8001`.
-
-Documentação interativa da API: `http://localhost:8001/docs`
+Backend disponível em `http://localhost:8001`.
+Documentação interativa: `http://localhost:8001/docs`
 
 ### 4. Configure e inicie o frontend
 
 ```bash
 cd frontend
-
-# Instale as dependências
 npm install
-
-# Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-O frontend estará disponível em `http://localhost:3000`.
+Frontend disponível em `http://localhost:3000`.
 
----
-
-## Estrutura do projeto
-
-```
-QuironTeam_Sume/
-├── docker-compose.yml          # PostgreSQL
-├── sume_mvp.md                 # Documento completo do produto
-├── sume_cronograma.md          # Cronograma de 5 dias
-│
-├── backend/
-│   ├── requirements.txt
-│   ├── .env.example
-│   └── app/
-│       ├── main.py             # Entrypoint FastAPI
-│       ├── database.py         # Conexão com o banco
-│       ├── models/             # Entidades SQLAlchemy
-│       │   ├── turma.py
-│       │   ├── aluno.py
-│       │   ├── trabalho.py     # Trabalho, Feature, Fonte, Parágrafo
-│       │   ├── perfil.py       # Perfil estilométrico do aluno
-│       │   └── dossie.py       # Dossiê de evidências e desfecho
-│       ├── routers/            # Endpoints da API
-│       │   ├── turmas.py
-│       │   ├── alunos.py
-│       │   └── trabalhos.py
-│       ├── schemas/            # Schemas Pydantic (request/response)
-│       │   ├── turma.py
-│       │   ├── aluno.py
-│       │   └── trabalho.py
-│       └── services/
-│           └── parser.py       # Extração de texto de .docx e .pdf
-│
-└── frontend/
-    └── src/
-        ├── app/
-        │   ├── layout.tsx      # Layout global (header Sumé)
-        │   ├── globals.css     # Paleta terrosa
-        │   ├── page.tsx        # Redireciona para /dashboard
-        │   ├── dashboard/      # Lista de turmas
-        │   ├── turma/[id]/     # Alunos da turma
-        │   ├── aluno/[id]/     # Perfil e trabalhos do aluno
-        │   └── trabalho/[id]/  # Análise do trabalho
-        └── lib/
-            └── api.ts          # Client da API + tipos TypeScript
-```
-
----
-
-## API — principais endpoints
-
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `GET` | `/turmas/` | Lista todas as turmas |
-| `POST` | `/turmas/` | Cria uma turma |
-| `GET` | `/turmas/{id}` | Detalhe de uma turma |
-| `GET` | `/alunos/turma/{id}` | Alunos de uma turma |
-| `POST` | `/alunos/` | Cria um aluno |
-| `GET` | `/alunos/{id}` | Detalhe de um aluno |
-| `GET` | `/trabalhos/aluno/{id}` | Trabalhos de um aluno |
-| `POST` | `/trabalhos/upload` | Upload de trabalho (.docx ou .pdf) |
-| `GET` | `/trabalhos/{id}` | Detalhe de um trabalho |
-| `PATCH` | `/trabalhos/{id}/baseline` | Marca/desmarca como baseline |
-
-### Exemplo — upload de trabalho
+### 5. Popule o banco com dados de demonstração
 
 ```bash
-curl -X POST http://localhost:8000/trabalhos/upload \
-  -F "aluno_id=1" \
-  -F "titulo=Redação sobre o cerrado" \
-  -F "tipo=redação" \
-  -F "baseline=false" \
-  -F "arquivo=@meu_arquivo.docx"
+cd backend
+python seed.py
 ```
 
----
-
-## Populando o banco com dados de demo
-
-> Em desenvolvimento. Um script `seed.py` será adicionado com 30 alunos e trabalhos gerados para os 3 casos de demonstração.
-
-Por enquanto, use a API diretamente ou o Swagger em `http://localhost:8000/docs`.
+Cria 3 alunos com perfis contrastantes:
+- **Ana Costa** — escrita limpa, consistente, fontes verificadas
+- **Bruno Lopes** — desvios fortes, fontes fabricadas, palavras típicas de IA
+- **Carla Mendes** — evolução legítima ao longo do semestre
 
 ---
 
@@ -187,40 +142,155 @@ Por enquanto, use a API diretamente ou o Swagger em `http://localhost:8000/docs`
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `DATABASE_URL` | `postgresql+asyncpg://sume:sume@localhost:5432/sume` | URL de conexão com o banco |
+| `DATABASE_URL` | `postgresql+asyncpg://sume:sume@localhost:5432/sume` | Conexão com o banco |
+| `GROQ_API_KEY` | — | Chave da Groq API para geração do roteiro socrático |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | `credentials/google_service_account.json` | Credenciais para importar Google Docs (opcional) |
 
 ### Frontend (`frontend/.env.local`)
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | URL base do backend |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8001` | URL base do backend |
 
 ---
 
-## Desenvolvimento — cronograma dos 5 dias
+## Configuração do Google Docs (opcional)
 
-| Dia | Foco | Status |
+Permite importar texto + histórico de edições diretamente de um Google Doc.
+
+### 1. Criar projeto e Service Account no Google Cloud
+
+1. Acesse [console.cloud.google.com](https://console.cloud.google.com) → crie um projeto
+2. **APIs & Services → Library** → ative **Google Drive API** e **Google Docs API**
+3. **APIs & Services → Credentials → + Create Credentials → Service account**
+4. Na service account criada: aba **Keys → Add Key → Create new key → JSON**
+5. Salve o arquivo em `backend/credentials/google_service_account.json`
+
+### 2. Adicionar ao `.env`
+
+```
+GOOGLE_SERVICE_ACCOUNT_JSON=credentials/google_service_account.json
+```
+
+### 3. Compartilhar o documento
+
+No Google Doc do aluno: **Compartilhar → cole o `client_email`** do JSON → Leitor → Enviar.
+
+O `client_email` está dentro do arquivo JSON (ex: `sume-app@meu-projeto.iam.gserviceaccount.com`).
+
+Sem essa configuração, o sistema funciona normalmente — o botão Google Docs retorna um aviso e todas as outras funcionalidades continuam disponíveis.
+
+---
+
+## Estrutura do projeto
+
+```
+QuironTeam_Sume/
+├── docker-compose.yml
+├── sume_roadmap.md              # Especificação das features pós-hackathon
+│
+├── backend/
+│   ├── requirements.txt
+│   ├── .env
+│   ├── seed.py                  # Dados de demonstração
+│   ├── credentials/             # Credenciais Google (não versionado)
+│   └── app/
+│       ├── main.py
+│       ├── database.py
+│       ├── models/
+│       │   ├── turma.py
+│       │   ├── aluno.py
+│       │   ├── trabalho.py      # Trabalho, TrabalhoFeature, Fonte, ParagrafoDestacado
+│       │   ├── perfil.py        # PerfilAluno (médias, desvios, tendências)
+│       │   ├── dossie.py        # Dossie, Desfecho
+│       │   └── gdocs.py         # HistoricoVersao
+│       ├── routers/
+│       │   ├── turmas.py
+│       │   ├── alunos.py
+│       │   ├── trabalhos.py     # upload .docx/.pdf e Google Docs
+│       │   ├── analise.py       # análise estilométrica
+│       │   ├── fontes.py        # validação de referências
+│       │   ├── relatorio.py     # roteiro socrático via LLM
+│       │   ├── desfecho.py      # registro do resultado da conversa
+│       │   ├── export.py        # exportação do dossiê em PDF
+│       │   ├── comparacao.py    # comparação entre alunos da turma
+│       │   └── gdocs.py         # importação/leitura do histórico Google Docs
+│       ├── schemas/
+│       │   ├── turma.py
+│       │   ├── aluno.py
+│       │   └── trabalho.py
+│       └── services/
+│           ├── parser.py        # extração de texto de .docx e .pdf
+│           ├── features.py      # 20 features estilométricas
+│           ├── perfil.py        # baseline, z-scores, análise intra-documento
+│           ├── languagetool_service.py  # erros ortográficos e de concordância
+│           └── gdocs.py         # Drive API — texto + histórico de revisões
+│
+└── frontend/
+    └── src/
+        ├── app/
+        │   ├── layout.tsx
+        │   ├── globals.css
+        │   ├── dashboard/           # lista de turmas
+        │   ├── turma/[id]/
+        │   │   ├── page.tsx          # alunos da turma
+        │   │   └── comparacao/       # comparação entre alunos
+        │   ├── aluno/[id]/page.tsx   # perfil, trajetória, trabalhos
+        │   └── trabalho/[id]/page.tsx # dossiê completo
+        ├── components/
+        │   ├── UploadTrabalhoButton.tsx    # upload .docx/.pdf ou Google Docs
+        │   ├── TrajetoriaChart.tsx         # gráfico de evolução (índice + avançado)
+        │   ├── AnalisarButton.tsx          # dispara análise estilométrica
+        │   ├── ValidarFontesButton.tsx     # dispara validação de fontes
+        │   ├── GerarRoteiroButton.tsx      # gera roteiro socrático via LLM
+        │   ├── DesfechoForm.tsx            # registra resultado da conversa
+        │   ├── GDocsPanel.tsx              # painel de histórico de edição
+        │   ├── HeatmapTurma.tsx            # heatmap de z-scores da turma
+        │   └── ListaParesSimilares.tsx     # pares com alta similaridade
+        └── lib/
+            └── api.ts
+```
+
+---
+
+## API — endpoints
+
+| Método | Endpoint | Descrição |
 |---|---|---|
-| Dia 1 | Fundação — estrutura, banco, parser, páginas base | Concluído |
-| Dia 2 | Inteligência estilométrica — 20 features, baseline, trajetória | Pendente |
-| Dia 3 | Fontes e histórico de versões — CrossRef, OpenAlex, Google Docs | Pendente |
-| Dia 4 | Relatórios e UI completa — dossiê, LLM, telas finais | Pendente |
-| Dia 5 | Polish e apresentação — demo, pitch, casos controlados | Pendente |
-
-Detalhes completos em [`sume_cronograma.md`](./sume_cronograma.md).
+| `GET` | `/turmas/` | Lista turmas |
+| `POST` | `/turmas/` | Cria turma |
+| `GET` | `/alunos/turma/{id}` | Alunos de uma turma |
+| `POST` | `/alunos/` | Cria aluno |
+| `GET` | `/alunos/{id}/trajetoria` | Trajetória estilométrica do aluno |
+| `POST` | `/trabalhos/upload` | Upload de trabalho (.docx ou .pdf) |
+| `POST` | `/trabalhos/upload-gdocs` | Importa trabalho do Google Docs |
+| `PATCH` | `/trabalhos/{id}/baseline` | Marca/desmarca como baseline |
+| `POST` | `/analise/{id}` | Executa análise estilométrica |
+| `GET` | `/analise/{id}` | Lê análise existente |
+| `POST` | `/fontes/{id}` | Valida fontes do trabalho |
+| `GET` | `/fontes/{id}` | Lista fontes validadas |
+| `POST` | `/relatorio/{id}` | Gera roteiro socrático (LLM) |
+| `POST` | `/desfecho/{id}` | Registra desfecho da conversa |
+| `GET` | `/export/{id}/pdf` | Exporta dossiê em PDF |
+| `GET` | `/turmas/{id}/comparacao` | Comparação estilométrica da turma |
+| `POST` | `/gdocs/{id}` | (Re)importa histórico de um Google Doc |
+| `GET` | `/gdocs/{id}` | Lê histórico de edição salvo |
 
 ---
 
-## Decisões de protótipo
+## Decisões de projeto
 
-- **Sem autenticação:** o professor é considerado logado. Nenhum JWT, nenhuma tela de login.
-- **Banco criado automaticamente:** as tabelas são criadas no startup do FastAPI via `Base.metadata.create_all`.
-- **Sem migrations versionadas:** para o hackathon, o Alembic não é necessário. Se o schema mudar, apague o volume do Docker e reinicie.
+- **Sem autenticação:** o professor é considerado logado. Sem JWT, sem tela de login.
+- **Tabelas criadas automaticamente:** `Base.metadata.create_all` no startup do FastAPI.
+- **Sem migrations versionadas:** para resetar o banco, apague o volume Docker e reinicie.
 
 ```bash
-# Resetar o banco do zero
 docker-compose down -v && docker-compose up -d
 ```
+
+- **LanguageTool sem Java:** usa a API REST pública como camada primária, Java local como secundária e heurísticas regex PT-BR como fallback offline — sem dependência obrigatória de Java 17+.
+- **Google Docs é opcional:** sem `GOOGLE_SERVICE_ACCOUNT_JSON`, o sistema funciona normalmente; a feature retorna 503 com mensagem clara.
+- **PDF gerado com fpdf2** (sem GTK): mais simples de instalar em qualquer OS do que WeasyPrint.
 
 ---
 

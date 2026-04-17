@@ -96,10 +96,13 @@ não são penalizados.
 > **Implementado em:** `backend/app/services/gdocs.py`, `backend/app/routers/gdocs.py`, `backend/app/models/gdocs.py`
 >
 > Autenticação via Service Account (configure `GOOGLE_SERVICE_ACCOUNT_JSON` no `.env`).
-> Endpoints `POST /gdocs/{id}` (importar) e `GET /gdocs/{id}` (ler). Detecta 4 padrões suspeitos:
-> colagem_unica, sem_edicoes, tempo_insuficiente, sessao_unica.
-> Frontend: componente `GDocsPanel` na página do trabalho com import form, 5 métricas e lista de padrões.
-> Graceful degradation: se `google-api-python-client` não estiver instalado, retorna 503 com mensagem clara.
+> **Importação completa via `POST /trabalhos/upload-gdocs`**: puxa o texto do documento (Drive export plain text)
+> + histórico de revisões em um único passo — análise estilométrica + padrões de edição juntos.
+> Formulário de envio tem aba "Google Docs" ao lado de "Arquivo (.docx/.pdf)".
+> Endpoints adicionais `POST /gdocs/{id}` (reimportar histórico) e `GET /gdocs/{id}` (ler dados salvos).
+> Detecta 4 padrões: colagem_unica, sem_edicoes, tempo_insuficiente, sessao_unica.
+> Frontend: `GDocsPanel` na página do trabalho mostra 5 métricas e padrões detectados automaticamente.
+> Graceful degradation: se `google-api-python-client` não instalado, retorna 503 com mensagem clara.
 
 ### Contexto
 
