@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 import { useState } from "react";
 
@@ -25,7 +26,25 @@ interface TrajetoriaData {
   feature_labels: Record<string, string>;
 }
 
-// Features more pedagogically interesting to show by default
+// Features que indicam desenvolvimento — direção positiva (1) ou negativa (-1)
+const DEVELOPMENTAL: Record<string, 1 | -1> = {
+  avg_sentence_length:      1,
+  avg_paragraph_length:     1,
+  syntactic_depth:          1,
+  lexical_diversity:        1,
+  avg_word_length:          1,
+  rare_words_pct:           1,
+  connective_density:       1,
+  spelling_errors_per_1000: -1,
+  agreement_errors_per_1000: -1,
+};
+
+const CORES_AVANCADO = [
+  "#2d7a4f", "#d97706", "#dc2626", "#2563eb",
+  "#7c3aed", "#0891b2", "#db2777", "#059669",
+];
+
+// Features destacadas no modo avançado por padrão
 const FEATURES_PADRAO = [
   "lexical_diversity",
   "avg_sentence_length",
@@ -33,149 +52,205 @@ const FEATURES_PADRAO = [
   "readability_index",
 ];
 
-const CORES = [
-  "#4a7c59",
-  "#c8860a",
-  "#8b3a2a",
-  "#2c6b8a",
-  "#6b2c8a",
-  "#2c8a6b",
-];
+/** Calcula o índice de desenvolvimento (0-100) para cada texto */
+function calcularIndice(textos: TextoFeatures[]): number[] {
+  if (textos.length === 0) return [];
+
+  const feats = Object.keys(DEVELOPMENTAL) as Array<keyof typeof DEVELOPMENTAL>;
+
+  // Intervalo de cada feature em todos os textos
+  const ranges: Record<string, { min: number; max: number }> = {};
+  for (const f of feats) {
+    const vals = textos.map((t) => t.features[f] ?? 0);
+    ranges[f] = { min: Math.min(...vals), max: Math.max(...vals) };
+  }
+
+  return textos.map((t) => {
+    const scores = feats.map((f) => {
+      const { min, max } = ranges[f];
+      if (max === min) return 50;
+      const norm = ((t.features[f] ?? min) - min) / (max - min) * 100;
+      return DEVELOPMENTAL[f] === 1 ? norm : 100 - norm;
+    });
+    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  });
+}
 
 export default function TrajetoriaChart({ data }: { data: TrajetoriaData }) {
   const { textos, feature_labels } = data;
-
-  const todasFeatures = Object.keys(feature_labels);
+  const [avancado, setAvancado] = useState(false);
   const [selecionadas, setSelecionadas] = useState<string[]>(
-    FEATURES_PADRAO.filter((f) => todasFeatures.includes(f))
+    FEATURES_PADRAO.filter((f) => Object.keys(feature_labels).includes(f))
   );
 
   if (textos.length < 2) {
     return (
-      <div className="border border-[#e8e0d0] bg-white rounded-lg p-5">
-        <h2 className="text-sm font-semibold text-[#6b5c40] uppercase tracking-wide mb-2">
-          Trajetória estilométrica
+      <div className="border-2 border-[#e5e1da] bg-white rounded-xl p-6">
+        <h2 className="font-bold text-[#78716c] uppercase tracking-wide mb-2">
+          Trajetória de desenvolvimento
         </h2>
-        <p className="text-sm text-[#6b5c40] italic">
+        <p className="text-[#78716c] italic">
           São necessários pelo menos 2 textos para exibir a trajetória.
         </p>
       </div>
     );
   }
 
-  // Build chart data: one entry per text, sorted by date
-  const chartData = textos
+  const textosOrdenados = textos
     .slice()
-    .sort(
-      (a, b) =>
-        new Date(a.data_entrega).getTime() - new Date(b.data_entrega).getTime()
-    )
-    .map((t) => ({
-      name:
-        t.titulo.length > 18 ? t.titulo.slice(0, 18) + "…" : t.titulo,
-      baseline: t.baseline,
-      ...selecionadas.reduce(
-        (acc, feat) => ({ ...acc, [feat]: t.features[feat] ?? null }),
-        {} as Record<string, number | null>
-      ),
-    }));
+    .sort((a, b) => new Date(a.data_entrega).getTime() - new Date(b.data_entrega).getTime());
+
+  const indices = calcularIndice(textosOrdenados);
+
+  // Dados para o modo simples (nota média)
+  const dadosSimples = textosOrdenados.map((t, i) => ({
+    name: t.titulo.length > 20 ? t.titulo.slice(0, 20) + "…" : t.titulo,
+    baseline: t.baseline,
+    indice: indices[i],
+  }));
+
+  // Dados para o modo avançado (features individuais)
+  const dadosAvancado = textosOrdenados.map((t) => ({
+    name: t.titulo.length > 20 ? t.titulo.slice(0, 20) + "…" : t.titulo,
+    baseline: t.baseline,
+    ...selecionadas.reduce(
+      (acc, feat) => ({ ...acc, [feat]: t.features[feat] ?? null }),
+      {} as Record<string, number | null>
+    ),
+  }));
 
   function toggleFeature(feat: string) {
     setSelecionadas((prev) =>
       prev.includes(feat)
-        ? prev.length > 1
-          ? prev.filter((f) => f !== feat)
-          : prev
+        ? prev.length > 1 ? prev.filter((f) => f !== feat) : prev
         : [...prev, feat]
     );
   }
 
-  return (
-    <div className="border border-[#e8e0d0] bg-white rounded-lg p-5">
-      <h2 className="text-sm font-semibold text-[#6b5c40] uppercase tracking-wide mb-4">
-        Trajetória estilométrica
-      </h2>
+  const todasFeatures = Object.keys(feature_labels);
 
-      {/* Feature selector */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        {todasFeatures.map((feat, i) => {
-          const ativo = selecionadas.includes(feat);
-          const cor = CORES[selecionadas.indexOf(feat) % CORES.length];
-          return (
-            <button
-              key={feat}
-              onClick={() => toggleFeature(feat)}
-              className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                ativo
-                  ? "text-white border-transparent"
-                  : "text-[#6b5c40] border-[#e8e0d0] hover:border-[#4a7c59]"
-              }`}
-              style={ativo ? { backgroundColor: cor, borderColor: cor } : {}}
-            >
-              {feature_labels[feat]}
-            </button>
-          );
-        })}
+  return (
+    <div className="border-2 border-[#e5e1da] bg-white rounded-xl p-6">
+      {/* Cabeçalho */}
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <h2 className="font-bold text-xl mb-1" style={{ fontFamily: "Georgia, serif" }}>
+            {avancado ? "Trajetória — métricas individuais" : "Índice de desenvolvimento da escrita"}
+          </h2>
+          <p className="text-sm text-[#78716c]">
+            {avancado
+              ? "Selecione as métricas que deseja comparar abaixo."
+              : "Média de 9 indicadores de maturidade textual (escala 0–100)."}
+          </p>
+        </div>
+        <button
+          onClick={() => setAvancado((v) => !v)}
+          className="ml-4 flex-shrink-0 text-sm px-4 py-2 rounded-lg border-2 border-[#2d7a4f] text-[#2d7a4f] font-semibold hover:bg-[#edf7f1] transition-colors"
+        >
+          {avancado ? "← Visão geral" : "Métricas detalhadas →"}
+        </button>
       </div>
 
-      <ResponsiveContainer width="100%" height={280}>
-        <LineChart
-          data={chartData}
-          margin={{ top: 5, right: 20, left: 0, bottom: 60 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e8e0d0" />
-          <XAxis
-            dataKey="name"
-            tick={{ fontSize: 10, fill: "#6b5c40" }}
-            angle={-35}
-            textAnchor="end"
-          />
-          <YAxis tick={{ fontSize: 10, fill: "#6b5c40" }} width={40} />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "#f5f0e8",
-              border: "1px solid #e8e0d0",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-            formatter={(value: number, name: string) => [
-              typeof value === "number" ? value.toFixed(3) : value,
-              feature_labels[name] ?? name,
-            ]}
-          />
-          <Legend
-            formatter={(value) => feature_labels[value] ?? value}
-            wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-          />
-          {selecionadas.map((feat, i) => (
+      {/* Seletor de features (modo avançado) */}
+      {avancado && (
+        <div className="flex flex-wrap gap-2 mb-5">
+          {todasFeatures.map((feat, i) => {
+            const ativo = selecionadas.includes(feat);
+            const cor = CORES_AVANCADO[selecionadas.indexOf(feat) % CORES_AVANCADO.length];
+            return (
+              <button
+                key={feat}
+                onClick={() => toggleFeature(feat)}
+                className={`text-sm px-3 py-1 rounded-full border-2 font-medium transition-colors ${
+                  ativo
+                    ? "text-white border-transparent"
+                    : "text-[#78716c] border-[#e5e1da] hover:border-[#2d7a4f]"
+                }`}
+                style={ativo ? { backgroundColor: cor, borderColor: cor } : {}}
+              >
+                {feature_labels[feat]}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Gráfico */}
+      <ResponsiveContainer width="100%" height={300}>
+        {avancado ? (
+          <LineChart data={dadosAvancado} margin={{ top: 5, right: 20, left: 0, bottom: 65 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e1da" />
+            <XAxis dataKey="name" tick={{ fontSize: 13, fill: "#78716c" }} angle={-35} textAnchor="end" />
+            <YAxis tick={{ fontSize: 13, fill: "#78716c" }} width={48} />
+            <Tooltip
+              contentStyle={{ backgroundColor: "#fff", border: "2px solid #e5e1da", borderRadius: 10, fontSize: 14 }}
+              formatter={(value, name) => [
+                typeof value === "number" ? value.toFixed(3) : String(value),
+                feature_labels[String(name)] ?? String(name),
+              ]}
+            />
+            <Legend formatter={(v) => feature_labels[v] ?? v} wrapperStyle={{ fontSize: 13, paddingTop: 10 }} />
+            {selecionadas.map((feat, i) => (
+              <Line
+                key={feat}
+                type="monotone"
+                dataKey={feat}
+                stroke={CORES_AVANCADO[i % CORES_AVANCADO.length]}
+                strokeWidth={2.5}
+                dot={(props) => {
+                  const { cx, cy, payload } = props;
+                  return (
+                    <circle
+                      key={`dot-${feat}-${cx}-${cy}`}
+                      cx={cx} cy={cy}
+                      r={payload.baseline ? 7 : 5}
+                      fill={CORES_AVANCADO[i % CORES_AVANCADO.length]}
+                      stroke={payload.baseline ? "#1c1917" : "none"}
+                      strokeWidth={payload.baseline ? 2.5 : 0}
+                    />
+                  );
+                }}
+                connectNulls
+              />
+            ))}
+          </LineChart>
+        ) : (
+          <LineChart data={dadosSimples} margin={{ top: 5, right: 20, left: 0, bottom: 65 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e1da" />
+            <XAxis dataKey="name" tick={{ fontSize: 13, fill: "#78716c" }} angle={-35} textAnchor="end" />
+            <YAxis domain={[0, 100]} tick={{ fontSize: 13, fill: "#78716c" }} width={48} />
+            <ReferenceLine y={50} stroke="#e5e1da" strokeDasharray="4 4" />
+            <Tooltip
+              contentStyle={{ backgroundColor: "#fff", border: "2px solid #e5e1da", borderRadius: 10, fontSize: 14 }}
+              formatter={(value) => [`${value} / 100`, "Índice de desenvolvimento"]}
+            />
             <Line
-              key={feat}
               type="monotone"
-              dataKey={feat}
-              stroke={CORES[i % CORES.length]}
-              strokeWidth={2}
+              dataKey="indice"
+              stroke="#2d7a4f"
+              strokeWidth={3}
               dot={(props) => {
                 const { cx, cy, payload } = props;
                 return (
                   <circle
-                    key={`dot-${feat}-${cx}-${cy}`}
-                    cx={cx}
-                    cy={cy}
-                    r={payload.baseline ? 6 : 4}
-                    fill={CORES[i % CORES.length]}
-                    stroke={payload.baseline ? "#2c2416" : "none"}
-                    strokeWidth={payload.baseline ? 2 : 0}
+                    key={`dot-simples-${cx}-${cy}`}
+                    cx={cx} cy={cy}
+                    r={payload.baseline ? 8 : 6}
+                    fill="#2d7a4f"
+                    stroke={payload.baseline ? "#1c1917" : "#fff"}
+                    strokeWidth={payload.baseline ? 2.5 : 2}
                   />
                 );
               }}
-              connectNulls
             />
-          ))}
-        </LineChart>
+          </LineChart>
+        )}
       </ResponsiveContainer>
 
-      <p className="text-xs text-[#6b5c40] mt-2">
-        Pontos com borda escura = textos de baseline.
+      <p className="text-sm text-[#78716c] mt-3">
+        {avancado
+          ? "Pontos com borda escura = textos de baseline."
+          : "Pontos com borda escura = textos de baseline. Quanto maior o índice, mais desenvolvida a escrita."}
       </p>
     </div>
   );

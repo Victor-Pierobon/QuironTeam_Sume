@@ -34,64 +34,58 @@ export default function GerarRoteiroButton({ trabalhoId }: { trabalhoId: number 
 
   return (
     <>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         <button
           onClick={relatorio ? () => setAberto(true) : handleGerar}
           disabled={loading}
-          className="px-4 py-2 rounded-lg bg-[#2c2416] text-[#f5f0e8] text-sm font-medium hover:bg-[#4a3828] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-5 py-2.5 rounded-xl bg-[#1c1917] text-white font-semibold hover:bg-[#374151] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? "Gerando roteiro…" : relatorio ? "Ver roteiro de conversa" : "Gerar roteiro de conversa"}
         </button>
-        {erro && <p className="text-xs text-[#8b3a2a]">{erro}</p>}
+        {erro && <p className="text-sm text-[#dc2626]">{erro}</p>}
       </div>
 
-      {/* Modal */}
       {aberto && relatorio && (
         <div
-          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           onClick={() => setAberto(false)}
         >
           <div
-            className="bg-[#f5f0e8] rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6"
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[88vh] overflow-y-auto p-7"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-bold" style={{ fontFamily: "Georgia, serif" }}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold" style={{ fontFamily: "Georgia, serif" }}>
                 Roteiro de conversa
               </h2>
               <button
                 onClick={() => setAberto(false)}
-                className="text-[#6b5c40] hover:text-[#2c2416] text-lg font-bold"
+                className="text-[#78716c] hover:text-[#1c1917] text-xl font-bold w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#f7f4ef] transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            {/* Observações */}
             <section className="mb-6">
-              <h3 className="text-xs font-semibold text-[#6b5c40] uppercase tracking-wide mb-2">
+              <h3 className="font-bold text-[#78716c] uppercase tracking-wide mb-3">
                 O que os dados mostram
               </h3>
-              <p className="text-[#2c2416] leading-relaxed" style={{ fontFamily: "Georgia, serif" }}>
+              <p className="text-[#1c1917] leading-relaxed" style={{ fontFamily: "Georgia, serif" }}>
                 {relatorio.observacoes}
               </p>
             </section>
 
-            {/* Perguntas socráticas */}
             <section className="mb-6">
-              <h3 className="text-xs font-semibold text-[#6b5c40] uppercase tracking-wide mb-3">
+              <h3 className="font-bold text-[#78716c] uppercase tracking-wide mb-4">
                 Perguntas para fazer ao aluno
               </h3>
-              <ol className="space-y-3">
+              <ol className="space-y-4">
                 {relatorio.perguntas_socraticas.map((p, i) => (
-                  <li key={i} className="flex gap-3">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#4a7c59] text-white text-xs flex items-center justify-center font-bold">
+                  <li key={i} className="flex gap-4">
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#2d7a4f] text-white text-sm flex items-center justify-center font-bold">
                       {i + 1}
                     </span>
-                    <p
-                      className="text-[#2c2416] leading-relaxed"
-                      style={{ fontFamily: "Georgia, serif" }}
-                    >
+                    <p className="text-[#1c1917] leading-relaxed" style={{ fontFamily: "Georgia, serif" }}>
                       {p}
                     </p>
                   </li>
@@ -99,20 +93,19 @@ export default function GerarRoteiroButton({ trabalhoId }: { trabalhoId: number 
               </ol>
             </section>
 
-            {/* Roteiro */}
-            <section className="bg-white border border-[#e8e0d0] rounded-lg p-4">
-              <h3 className="text-xs font-semibold text-[#6b5c40] uppercase tracking-wide mb-2">
+            <section className="bg-[#f7f4ef] border-2 border-[#e5e1da] rounded-xl p-5">
+              <h3 className="font-bold text-[#78716c] uppercase tracking-wide mb-3">
                 Como conduzir a conversa
               </h3>
-              <p className="text-[#2c2416] leading-relaxed text-sm" style={{ fontFamily: "Georgia, serif" }}>
+              <p className="text-[#1c1917] leading-relaxed" style={{ fontFamily: "Georgia, serif" }}>
                 {relatorio.roteiro_conversa}
               </p>
             </section>
 
-            <div className="mt-5 text-center">
+            <div className="mt-6 text-center">
               <button
                 onClick={() => setAberto(false)}
-                className="px-6 py-2 rounded-lg border border-[#e8e0d0] text-[#6b5c40] text-sm hover:bg-[#e8e0d0] transition-colors"
+                className="px-8 py-2.5 rounded-xl border-2 border-[#e5e1da] text-[#78716c] font-semibold hover:bg-[#f7f4ef] transition-colors"
               >
                 Fechar
               </button>

@@ -25,15 +25,15 @@ export default function ValidarFontesButton({ trabalhoId }: { trabalhoId: number
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <button
         onClick={handleValidar}
         disabled={loading}
-        className="px-4 py-2 rounded-lg border border-[#4a7c59] text-[#4a7c59] text-sm font-medium hover:bg-[#f0f7f2] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="px-5 py-2.5 rounded-xl border-2 border-[#2d7a4f] text-[#2d7a4f] font-semibold hover:bg-[#edf7f1] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? "Validando fontes…" : "Validar fontes"}
       </button>
-      {erro && <p className="text-xs text-[#8b3a2a]">{erro}</p>}
+      {erro && <p className="text-sm text-[#dc2626]">{erro}</p>}
     </div>
   );
 }

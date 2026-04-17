@@ -13,14 +13,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className="h-full">
-      <body className="min-h-full flex flex-col bg-[#f5f0e8] text-[#2c2416]">
-        <header className="border-b border-[#e8e0d0] px-8 py-4 flex items-center gap-3">
-          <span className="text-2xl font-bold tracking-tight" style={{ fontFamily: "Georgia, serif" }}>
+      <body className="min-h-full flex flex-col bg-[#f7f4ef] text-[#1c1917]">
+        <header className="bg-[#1e4d2b] px-8 py-4 flex items-center gap-4 shadow-md">
+          <span className="text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "Georgia, serif" }}>
             Sumé
           </span>
-          <span className="text-sm text-[#6b5c40]">copiloto pedagógico</span>
+          <span className="text-sm text-[#a7d4b8] font-medium">copiloto pedagógico</span>
         </header>
-        <main className="flex-1 px-8 py-6">{children}</main>
+        <main className="flex-1 px-8 py-8">{children}</main>
       </body>
     </html>
   );

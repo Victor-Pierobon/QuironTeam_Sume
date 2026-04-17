@@ -14,13 +14,8 @@ export default function AnalisarButton({ trabalhoId }: { trabalhoId: number }) {
     setLoading(true);
     setErro(null);
     try {
-      const res = await fetch(`${BASE_URL}/analise/${trabalhoId}`, {
-        method: "POST",
-      });
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg);
-      }
+      const res = await fetch(`${BASE_URL}/analise/${trabalhoId}`, { method: "POST" });
+      if (!res.ok) throw new Error(await res.text());
       router.refresh();
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao analisar.");
@@ -34,11 +29,11 @@ export default function AnalisarButton({ trabalhoId }: { trabalhoId: number }) {
       <button
         onClick={handleAnalisar}
         disabled={loading}
-        className="px-4 py-2 rounded-lg bg-[#4a7c59] text-white text-sm font-medium hover:bg-[#3d6b4a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="px-5 py-2.5 rounded-xl bg-[#2d7a4f] text-white font-semibold hover:bg-[#25673e] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? "Analisando…" : "Analisar trabalho"}
       </button>
-      {erro && <p className="text-xs text-[#8b3a2a]">{erro}</p>}
+      {erro && <p className="text-sm text-[#dc2626]">{erro}</p>}
     </div>
   );
 }
