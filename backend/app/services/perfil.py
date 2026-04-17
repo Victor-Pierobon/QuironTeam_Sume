@@ -85,7 +85,13 @@ async def recalcular_perfil(aluno_id: int, db: AsyncSession) -> PerfilAluno | No
 
         # If features not yet extracted for this baseline, extract now
         if not stored:
+            from re import findall as _findall
+            from app.services.languagetool_service import contar_erros
             extracted = extrair_features(trab.texto)
+            n_words = len(_findall(r'\b[a-záéíóúàâêôãõçñü]+\b', trab.texto.lower()))
+            sp, ag = contar_erros(trab.texto, n_words)
+            extracted["spelling_errors_per_1000"] = sp
+            extracted["agreement_errors_per_1000"] = ag
             for nome, valor in extracted.items():
                 db.add(TrabalhoFeature(trabalho_id=trab.id, nome=nome, valor=valor))
             stored = extracted

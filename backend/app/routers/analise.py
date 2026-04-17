@@ -8,7 +8,8 @@ from app.database import get_db
 from app.models.dossie import Dossie
 from app.models.perfil import PerfilAluno
 from app.models.trabalho import ParagrafoDestacado, Trabalho, TrabalhoFeature
-from app.services.features import extrair_features
+from app.services.features import extrair_features, FEATURE_NAMES
+from app.services.languagetool_service import contar_erros_async
 from app.services.perfil import (
     analisar_desvios,
     analisar_intra_documento,
@@ -26,8 +27,16 @@ async def analisar_trabalho(trabalho_id: int, db: AsyncSession = Depends(get_db)
     if not trabalho:
         raise HTTPException(status_code=404, detail="Trabalho não encontrado")
 
-    # 1. Extrair e salvar features
+    # 1. Extrair features (as 18 rápidas + as 2 do LanguageTool)
     features = extrair_features(trabalho.texto)
+
+    # Rodar LanguageTool (API pública ou heurística)
+    from re import findall
+    n_palavras = len(findall(r'\b[a-záéíóúàâêôãõçñü]+\b', trabalho.texto.lower()))
+    spelling, agreement = await contar_erros_async(trabalho.texto, n_palavras)
+    features["spelling_errors_per_1000"]  = spelling
+    features["agreement_errors_per_1000"] = agreement
+
     await db.execute(
         delete(TrabalhoFeature).where(TrabalhoFeature.trabalho_id == trabalho_id)
     )

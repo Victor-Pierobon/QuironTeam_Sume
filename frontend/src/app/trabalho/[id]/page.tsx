@@ -4,6 +4,7 @@ import AnalisarButton from "@/components/AnalisarButton";
 import ValidarFontesButton from "@/components/ValidarFontesButton";
 import GerarRoteiroButton from "@/components/GerarRoteiroButton";
 import DesfechoForm from "@/components/DesfechoForm";
+import GDocsPanel from "@/components/GDocsPanel";
 
 interface Desvio {
   nome: string;
@@ -76,6 +77,11 @@ export default async function TrabalhoPage({
     desfecho = await api.desfecho.get(trabalhoId);
   } catch {}
 
+  let gdocs = null;
+  try {
+    gdocs = await apiFetch(`/gdocs/${trabalhoId}`);
+  } catch {}
+
   const paragrafosTexto = trabalho.texto
     ? trabalho.texto.split("\n\n").filter(Boolean)
     : [];
@@ -134,6 +140,17 @@ export default async function TrabalhoPage({
         <AnalisarButton trabalhoId={trabalhoId} />
         <ValidarFontesButton trabalhoId={trabalhoId} />
         {analise && <GerarRoteiroButton trabalhoId={trabalhoId} />}
+        {analise && (
+          <a
+            href={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001"}/export/${trabalhoId}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={`sume-dossie-${trabalhoId}.pdf`}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-[#1e4d2b] hover:bg-[#2d7a4f] transition-colors"
+          >
+            Exportar PDF
+          </a>
+        )}
         <DesfechoForm
           trabalhoId={trabalhoId}
           desfechoAtual={desfecho ? { status: desfecho.status, nota: desfecho.nota } : null}
@@ -276,6 +293,8 @@ export default async function TrabalhoPage({
           </div>
         </div>
       )}
+
+      <GDocsPanel trabalhoId={trabalhoId} dadosIniciais={gdocs} />
 
       {/* Texto do trabalho */}
       <div className="border-2 border-[#e5e1da] bg-white rounded-xl p-7">

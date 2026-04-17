@@ -12,3 +12,7 @@ pydantic-settings>=2.2.1
 httpx>=0.27.0
 textstat>=0.7.0
 groq>=0.9.0
+language-tool-python>=3.3.0
+fpdf2>=2.7.0
+google-api-python-client>=2.130.0
+google-auth>=2.29.0

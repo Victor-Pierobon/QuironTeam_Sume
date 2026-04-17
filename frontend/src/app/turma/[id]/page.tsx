@@ -52,6 +52,15 @@ export default async function TurmaPage({
         {turma.disciplina} · {turma.ano_serie}
       </p>
 
+      <div className="flex items-center justify-between mb-6">
+        <Link
+          href={`/turma/${turmaId}/comparacao`}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-[#1e4d2b] hover:bg-[#2d7a4f] transition-colors"
+        >
+          Comparar trabalhos da turma
+        </Link>
+      </div>
+
       <div className="flex gap-4 mb-9">
         {[
           { label: "Total",     value: alunos.length,    color: "text-[#1c1917]" },

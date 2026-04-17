@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { api, Trabalho, Trajetoria } from "@/lib/api";
 import TrajetoriaChart from "@/components/TrajetoriaChart";
+import UploadTrabalhoButton from "@/components/UploadTrabalhoButton";
 
 export default async function AlunoPage({
   params,
@@ -74,6 +75,11 @@ export default async function AlunoPage({
           <TrajetoriaChart data={trajetoria} />
         </section>
       )}
+
+      {/* Botão de upload */}
+      <div className="mb-8">
+        <UploadTrabalhoButton alunoId={alunoId} />
+      </div>
 
       {baselines.length > 0 && (
         <section className="mb-8">
