@@ -8,3 +8,96 @@ body {
   background-color: #f7f4ef;
   color: #1c1917;
 }
+
+/* ── Escala de fonte ── */
+html.fonte-grande   { font-size: 21px; }
+html.fonte-gigante  { font-size: 25px; }
+
+/* ── Alto contraste ── */
+html.alto-contraste,
+html.alto-contraste body {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+html.alto-contraste * {
+  border-color: #fff !important;
+  outline-color: #ff0 !important;
+}
+
+html.alto-contraste a,
+html.alto-contraste button:not([disabled]) {
+  color: #ff0 !important;
+}
+
+html.alto-contraste .bg-white,
+html.alto-contraste [class*="bg-[#f"] {
+  background-color: #111 !important;
+  color: #fff !important;
+}
+
+html.alto-contraste [class*="bg-[#2d7a4f]"],
+html.alto-contraste [class*="bg-[#25673e]"],
+html.alto-contraste [class*="bg-[#1e4d2b]"] {
+  background-color: #006600 !important;
+  color: #fff !important;
+}
+
+html.alto-contraste [class*="text-[#78716c]"],
+html.alto-contraste [class*="text-[#6b5c40]"] {
+  color: #ccc !important;
+}
+
+html.alto-contraste [class*="text-[#2d7a4f]"] { color: #4dff4d !important; }
+html.alto-contraste [class*="text-[#d97706]"] { color: #ffcc00 !important; }
+html.alto-contraste [class*="text-[#dc2626]"] { color: #ff6666 !important; }
+
+/* ── Espaçamento amplo ── */
+html.espacamento-amplo *:not(svg):not(path):not(circle):not(line) {
+  line-height: 1.9 !important;
+  letter-spacing: 0.03em !important;
+  word-spacing: 0.12em !important;
+}
+html.espacamento-amplo p,
+html.espacamento-amplo li,
+html.espacamento-amplo div,
+html.espacamento-amplo h1,
+html.espacamento-amplo h2,
+html.espacamento-amplo h3,
+html.espacamento-amplo h4 {
+  margin-bottom: 0.6em !important;
+}
+
+/* ── Fonte para dislexia ── */
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("https://cdn.jsdelivr.net/gh/antijingoist/opendyslexic@master/compiled/OpenDyslexic-Regular.otf") format("opentype"),
+       url("https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/fonts/OpenDyslexic-Regular.otf") format("opentype");
+  font-display: swap;
+}
+html.fonte-dislexia,
+html.fonte-dislexia *:not(svg):not(path) {
+  font-family: "OpenDyslexic", Arial, Verdana, sans-serif !important;
+  letter-spacing: 0.07em !important;
+  word-spacing: 0.2em !important;
+  line-height: 1.8 !important;
+}
+
+/* ── Foco visível para navegação por teclado ── */
+*:focus-visible {
+  outline: 3px solid #2d7a4f;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+html.alto-contraste *:focus-visible {
+  outline: 3px solid #ff0 !important;
+}
+
+/* ── Respeita preferência do SO por menos movimento ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

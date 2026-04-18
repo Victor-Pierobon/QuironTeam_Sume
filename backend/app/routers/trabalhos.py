@@ -12,6 +12,7 @@ from app.services.parser import extrair_texto
 from app.services.features import extrair_features
 from app.services.perfil import recalcular_perfil
 from app.services.gdocs import importar_gdoc_completo, detectar_padroes
+from app.services.ocr import extrair_texto_foto
 
 router = APIRouter()
 
@@ -68,6 +69,57 @@ async def upload_trabalho(
     await db.refresh(trabalho)
 
     # If marked as baseline, recalculate student profile
+    if baseline:
+        await recalcular_perfil(aluno_id, db)
+
+    return trabalho
+
+
+MIME_FOTO = {
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "webp": "image/webp",
+}
+
+
+@router.post("/upload-foto", response_model=TrabalhoOut, status_code=201)
+async def upload_foto(
+    aluno_id: int = Form(...),
+    titulo: str = Form(...),
+    tipo: str = Form("redação"),
+    baseline: bool = Form(False),
+    arquivo: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    extensao = arquivo.filename.rsplit(".", 1)[-1].lower()
+    if extensao not in MIME_FOTO:
+        raise HTTPException(status_code=400, detail="Formato não suportado. Use .jpg, .jpeg, .png ou .webp")
+
+    conteudo = await arquivo.read()
+    texto = await extrair_texto_foto(conteudo, MIME_FOTO[extensao])
+
+    if not texto.strip():
+        raise HTTPException(status_code=422, detail="Não foi possível extrair texto da imagem.")
+
+    trabalho = Trabalho(
+        aluno_id=aluno_id,
+        titulo=titulo,
+        tipo=tipo,
+        texto=texto,
+        formato_origem="foto",
+        baseline=baseline,
+    )
+    db.add(trabalho)
+    await db.flush()
+
+    features = extrair_features(texto)
+    for nome, valor in features.items():
+        db.add(TrabalhoFeature(trabalho_id=trabalho.id, nome=nome, valor=valor))
+
+    await db.commit()
+    await db.refresh(trabalho)
+
     if baseline:
         await recalcular_perfil(aluno_id, db)
 

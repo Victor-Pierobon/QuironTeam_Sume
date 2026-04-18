@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { api, Aluno } from "@/lib/api";
+import TourTurma from "@/components/tour/TourTurma";
 
 const STATUS_CONFIG = {
   ok:       { label: "Normal",    color: "bg-[#2d7a4f] text-white" },
@@ -52,16 +53,9 @@ export default async function TurmaPage({
         {turma.disciplina} · {turma.ano_serie}
       </p>
 
-      <div className="flex items-center justify-between mb-6">
-        <Link
-          href={`/turma/${turmaId}/comparacao`}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-[#1e4d2b] hover:bg-[#2d7a4f] transition-colors"
-        >
-          Comparar trabalhos da turma
-        </Link>
-      </div>
+      <TourTurma />
 
-      <div className="flex gap-4 mb-9">
+      <div data-tour="contadores-turma" className="flex gap-4 mb-9">
         {[
           { label: "Total",     value: alunos.length,    color: "text-[#1c1917]" },
           { label: "Normal",    value: totais.ok,         color: "text-[#2d7a4f]" },
@@ -85,12 +79,12 @@ export default async function TurmaPage({
             const st = STATUS_CONFIG[aluno.status] ?? STATUS_CONFIG.ok;
             return (
               <Link key={aluno.id} href={`/aluno/${aluno.id}`}>
-                <div className="border-2 border-[#e5e1da] bg-white rounded-xl p-6 hover:border-[#2d7a4f] hover:shadow-md transition-all cursor-pointer">
+                <div data-tour="card-aluno" className="border-2 border-[#e5e1da] bg-white rounded-xl p-6 hover:border-[#2d7a4f] hover:shadow-md transition-all cursor-pointer">
                   <div className="flex items-start justify-between mb-3">
                     <h2 className="font-bold text-lg" style={{ fontFamily: "Georgia, serif" }}>
                       {aluno.nome}
                     </h2>
-                    <span className={`text-sm px-3 py-1 rounded-full font-semibold ${st.color}`}>
+                    <span data-tour="badge-status" className={`text-sm px-3 py-1 rounded-full font-semibold ${st.color}`}>
                       {st.label}
                     </span>
                   </div>

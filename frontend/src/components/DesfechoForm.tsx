@@ -53,7 +53,7 @@ export default function DesfechoForm({
     <>
       <button
         onClick={() => setAberto(true)}
-        className="px-5 py-2.5 rounded-xl border-2 border-[#e5e1da] text-[#78716c] font-semibold hover:bg-[#f7f4ef] transition-colors"
+        className="px-5 py-2.5 rounded-xl bg-[#3d5a80] text-white font-semibold hover:bg-[#2e4a6e] transition-colors"
       >
         {desfechoAtual ? "Editar desfecho" : "Registrar desfecho"}
       </button>

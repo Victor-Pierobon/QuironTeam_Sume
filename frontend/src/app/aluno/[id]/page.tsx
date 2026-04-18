@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { api, Trabalho, Trajetoria } from "@/lib/api";
 import TrajetoriaChart from "@/components/TrajetoriaChart";
+import TourAluno from "@/components/tour/TourAluno";
 import UploadTrabalhoButton from "@/components/UploadTrabalhoButton";
 
 export default async function AlunoPage({
@@ -47,6 +48,8 @@ export default async function AlunoPage({
         <span className="text-[#1c1917] font-medium">{aluno.nome}</span>
       </div>
 
+      <TourAluno />
+
       <h1 className="text-4xl font-bold mb-1" style={{ fontFamily: "Georgia, serif" }}>
         {aluno.nome}
       </h1>
@@ -54,12 +57,12 @@ export default async function AlunoPage({
         <p className="text-[#78716c] mb-7">Matrícula: {aluno.matricula}</p>
       )}
 
-      <div className="grid grid-cols-2 gap-5 mb-9">
+      <div data-tour="baseline-section" className="grid grid-cols-2 gap-5 mb-9">
         <div className="border-2 border-[#e5e1da] bg-white rounded-xl p-5">
           <div className="text-3xl font-bold text-[#2d7a4f]">{baselines.length}</div>
-          <div className="text-[#78716c] mt-1 font-medium">textos de baseline</div>
+          <div className="text-[#78716c] mt-1 font-medium">textos de linha de base</div>
           {baselines.length < 3 && (
-            <div className="text-sm text-[#d97706] mt-2 font-medium">
+            <div data-tour="baseline-aviso" className="text-sm text-[#d97706] mt-2 font-medium">
               Mínimo recomendado: 3 textos
             </div>
           )}
@@ -71,13 +74,13 @@ export default async function AlunoPage({
       </div>
 
       {trajetoria && trajetoria.textos.length >= 2 && (
-        <section className="mb-9">
+        <section data-tour="trajetoria-chart" className="mb-9">
           <TrajetoriaChart data={trajetoria} />
         </section>
       )}
 
       {/* Botão de upload */}
-      <div className="mb-8">
+      <div data-tour="botao-upload" className="mb-8">
         <UploadTrabalhoButton alunoId={alunoId} />
       </div>
 

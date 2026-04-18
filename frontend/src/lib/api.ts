@@ -32,7 +32,7 @@ export const api = {
       apiFetch<Trabalho>(`/trabalhos/${id}/baseline?baseline=${baseline}`, { method: "PATCH" }),
   },
   fontes: {
-    get: (trabalhoId: number) => apiFetch<Fonte[]>(`/fontes/${trabalhoId}`),
+    get: (trabalhoId: number) => apiFetch<{ validado: boolean; fontes: Fonte[] }>(`/fontes/${trabalhoId}`),
   },
   trajetoria: {
     get: (alunoId: number) => apiFetch<Trajetoria>(`/alunos/${alunoId}/trajetoria`),

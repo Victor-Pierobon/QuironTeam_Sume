@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { api, Turma } from "@/lib/api";
+import TourDashboard from "@/components/tour/TourDashboard";
 
 async function getTurmas(): Promise<Turma[]> {
   try {
@@ -21,6 +22,8 @@ export default async function DashboardPage() {
         Selecione uma turma para ver os alunos e seus trabalhos.
       </p>
 
+      <TourDashboard />
+
       {turmas.length === 0 ? (
         <div className="border border-[#e5e1da] rounded-xl p-10 text-center text-[#78716c] bg-white">
           <p className="text-lg mb-2">Nenhuma turma cadastrada ainda.</p>
@@ -30,7 +33,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {turmas.map((turma) => (
             <Link key={turma.id} href={`/turma/${turma.id}`}>
-              <div className="border-2 border-[#e5e1da] bg-white rounded-xl p-6 hover:border-[#2d7a4f] hover:shadow-md transition-all cursor-pointer">
+              <div data-tour="card-turma" className="border-2 border-[#e5e1da] bg-white rounded-xl p-6 hover:border-[#2d7a4f] hover:shadow-md transition-all cursor-pointer">
                 <h2 className="font-bold text-xl mb-1" style={{ fontFamily: "Georgia, serif" }}>
                   {turma.nome}
                 </h2>

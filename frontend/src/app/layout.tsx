@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import PainelAcessibilidade from "@/components/acessibilidade/PainelAcessibilidade";
 
 export const metadata: Metadata = {
   title: "Sumé",
@@ -21,6 +22,7 @@ export default function RootLayout({
           <span className="text-sm text-[#a7d4b8] font-medium">copiloto pedagógico</span>
         </header>
         <main className="flex-1 px-8 py-8">{children}</main>
+        <PainelAcessibilidade />
       </body>
     </html>
   );

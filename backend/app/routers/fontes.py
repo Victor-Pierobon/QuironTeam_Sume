@@ -56,23 +56,26 @@ async def validar_fontes(trabalho_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.get("/{trabalho_id}")
 async def get_fontes(trabalho_id: int, db: AsyncSession = Depends(get_db)):
+    # Verifica se o dossiê existe (indica que validação já foi executada)
+    dossie_result = await db.execute(select(Dossie).where(Dossie.trabalho_id == trabalho_id))
+    dossie = dossie_result.scalar_one_or_none()
+    if not dossie or dossie.fontes_total is None:
+        raise HTTPException(status_code=404, detail="Fontes ainda não validadas.")
+
     result = await db.execute(select(Fonte).where(Fonte.trabalho_id == trabalho_id))
     fontes = result.scalars().all()
 
-    if not fontes:
-        raise HTTPException(
-            status_code=404,
-            detail="Nenhuma fonte validada. Execute POST /fontes/{id} primeiro.",
-        )
-
-    return [
-        {
-            "id": f.id,
-            "texto_original": f.texto_original,
-            "url": f.url,
-            "doi": f.doi,
-            "status": f.status.value,
-            "justificativa": f.justificativa,
-        }
-        for f in fontes
-    ]
+    return {
+        "validado": True,
+        "fontes": [
+            {
+                "id": f.id,
+                "texto_original": f.texto_original,
+                "url": f.url,
+                "doi": f.doi,
+                "status": f.status.value,
+                "justificativa": f.justificativa,
+            }
+            for f in fontes
+        ],
+    }
