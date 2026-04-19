@@ -33,6 +33,7 @@ from app.models.aluno import Aluno
 from app.models.trabalho import Trabalho, TrabalhoFeature
 from app.models.perfil import PerfilAluno
 from app.models.dossie import Dossie, Desfecho
+from app.models.gdocs import HistoricoVersao
 from app.services.features import extrair_features
 from app.services.perfil import recalcular_perfil
 
@@ -293,7 +294,7 @@ async def limpar(db: AsyncSession) -> None:
 
     print("Limpando dados anteriores…")
     for Model in (Desfecho, Dossie, ParagrafoDestacado, Fonte,
-                  TrabalhoFeature, PerfilAluno, Trabalho, Aluno, Turma):
+                  TrabalhoFeature, HistoricoVersao, PerfilAluno, Trabalho, Aluno, Turma):
         await db.execute(delete(Model))
     await db.commit()
     print("Banco limpo.\n")

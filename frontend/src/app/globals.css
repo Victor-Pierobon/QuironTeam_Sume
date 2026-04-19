@@ -83,6 +83,15 @@ html.fonte-dislexia *:not(svg):not(path) {
   line-height: 1.8 !important;
 }
 
+/* ── Cursor e hover padrão para botões ── */
+button:not([disabled]) {
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+button:not([disabled]):hover {
+  filter: brightness(0.92);
+}
+
 /* ── Foco visível para navegação por teclado ── */
 *:focus-visible {
   outline: 3px solid #2d7a4f;

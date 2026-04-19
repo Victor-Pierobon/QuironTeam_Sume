@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { api, Aluno } from "@/lib/api";
 import TourTurma from "@/components/tour/TourTurma";
+import TurmaDonut from "@/components/TurmaDonut";
 
 const STATUS_CONFIG = {
   ok:       { label: "Normal",    color: "bg-[#2d7a4f] text-white" },
@@ -55,18 +56,8 @@ export default async function TurmaPage({
 
       <TourTurma />
 
-      <div data-tour="contadores-turma" className="flex gap-4 mb-9">
-        {[
-          { label: "Total",     value: alunos.length,    color: "text-[#1c1917]" },
-          { label: "Normal",    value: totais.ok,         color: "text-[#2d7a4f]" },
-          { label: "Atenção",   value: totais.atencao,    color: "text-[#d97706]" },
-          { label: "Conversar", value: totais.destaque,   color: "text-[#dc2626]" },
-        ].map((item) => (
-          <div key={item.label} className="border-2 border-[#e5e1da] bg-white rounded-xl px-6 py-4 text-center min-w-[90px]">
-            <div className={`text-3xl font-bold ${item.color}`}>{item.value}</div>
-            <div className="text-sm text-[#78716c] mt-1 font-medium">{item.label}</div>
-          </div>
-        ))}
+      <div data-tour="contadores-turma" className="mb-9">
+        <TurmaDonut ok={totais.ok} atencao={totais.atencao} destaque={totais.destaque} />
       </div>
 
       {alunos.length === 0 ? (

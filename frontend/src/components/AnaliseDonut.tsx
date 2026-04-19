@@ -21,15 +21,15 @@ export default function AnaliseDonut({ normais, atencao, destaque }: Props) {
   if (dados.length === 0) return null;
 
   return (
-    <div className="flex flex-col items-center w-full gap-2">
-      <ResponsiveContainer width="100%" height={110}>
+    <div className="flex flex-col items-center w-full gap-3">
+      <ResponsiveContainer width="100%" height={160}>
         <PieChart>
           <Pie
             data={dados}
             cx="50%"
             cy="50%"
-            innerRadius={28}
-            outerRadius={44}
+            innerRadius={42}
+            outerRadius={64}
             paddingAngle={3}
             dataKey="value"
             label={false}
@@ -49,14 +49,14 @@ export default function AnaliseDonut({ normais, atencao, destaque }: Props) {
           />
         </PieChart>
       </ResponsiveContainer>
-      <div className="flex justify-center gap-3 flex-wrap">
+      <div className="flex justify-center gap-4 flex-wrap">
         {dados.map((entry) => (
-          <div key={entry.name} className="flex items-center gap-1">
+          <div key={entry.name} className="flex items-center gap-1.5">
             <span
-              className="w-2 h-2 rounded-full flex-shrink-0"
+              className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: CORES[LABELS.indexOf(entry.name)] }}
             />
-            <span className="text-xs text-[#78716c]">{entry.value} {entry.name}</span>
+            <span className="text-sm text-[#78716c] font-medium">{entry.value} {entry.name}</span>
           </div>
         ))}
       </div>

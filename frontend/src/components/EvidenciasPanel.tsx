@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Cursor } from "recharts/types/component/Cursor";
 
 interface Desvio {
   nome: string;
@@ -71,6 +72,7 @@ export default function EvidenciasPanel({ desvios, normais, atencao, destaque }:
               style={{
                 borderColor: ativo ? f.bordaAtivo : "#e5e1da",
                 backgroundColor: ativo ? f.bgAtivo : "white",
+                
               }}
             >
               <div

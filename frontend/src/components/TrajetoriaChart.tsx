@@ -176,20 +176,20 @@ export default function TrajetoriaChart({ data }: { data: TrajetoriaData }) {
       )}
 
       {/* Gráfico */}
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={400}>
         {avancado ? (
-          <LineChart data={dadosAvancado} margin={{ top: 5, right: 20, left: 0, bottom: 65 }}>
+          <LineChart data={dadosAvancado} margin={{ top: 5, right: 20, left: 0, bottom: 80 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e1da" />
-            <XAxis dataKey="name" tick={{ fontSize: 13, fill: "#78716c" }} angle={-35} textAnchor="end" />
-            <YAxis tick={{ fontSize: 13, fill: "#78716c" }} width={48} />
+            <XAxis dataKey="name" tick={{ fontSize: 15, fill: "#78716c" }} angle={-35} textAnchor="end" />
+            <YAxis tick={{ fontSize: 15, fill: "#78716c" }} width={52} />
             <Tooltip
-              contentStyle={{ backgroundColor: "#fff", border: "2px solid #e5e1da", borderRadius: 10, fontSize: 14 }}
+              contentStyle={{ backgroundColor: "#fff", border: "2px solid #e5e1da", borderRadius: 10, fontSize: 15 }}
               formatter={(value, name) => [
                 typeof value === "number" ? value.toFixed(3) : String(value),
                 feature_labels[String(name)] ?? String(name),
               ]}
             />
-            <Legend formatter={(v) => feature_labels[v] ?? v} wrapperStyle={{ fontSize: 13, paddingTop: 10 }} />
+            <Legend formatter={(v) => feature_labels[v] ?? v} wrapperStyle={{ fontSize: 15, paddingTop: 12 }} />
             {selecionadas.map((feat, i) => (
               <Line
                 key={feat}
@@ -215,13 +215,13 @@ export default function TrajetoriaChart({ data }: { data: TrajetoriaData }) {
             ))}
           </LineChart>
         ) : (
-          <LineChart data={dadosSimples} margin={{ top: 5, right: 20, left: 0, bottom: 65 }}>
+          <LineChart data={dadosSimples} margin={{ top: 5, right: 20, left: 0, bottom: 80 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e1da" />
-            <XAxis dataKey="name" tick={{ fontSize: 13, fill: "#78716c" }} angle={-35} textAnchor="end" />
-            <YAxis domain={[0, 100]} tick={{ fontSize: 13, fill: "#78716c" }} width={48} />
+            <XAxis dataKey="name" tick={{ fontSize: 15, fill: "#78716c" }} angle={-35} textAnchor="end" />
+            <YAxis domain={[0, 100]} tick={{ fontSize: 15, fill: "#78716c" }} width={52} />
             <ReferenceLine y={50} stroke="#e5e1da" strokeDasharray="4 4" />
             <Tooltip
-              contentStyle={{ backgroundColor: "#fff", border: "2px solid #e5e1da", borderRadius: 10, fontSize: 14 }}
+              contentStyle={{ backgroundColor: "#fff", border: "2px solid #e5e1da", borderRadius: 10, fontSize: 15 }}
               formatter={(value) => [`${value} / 100`, "Índice de desenvolvimento"]}
             />
             <Line
